@@ -3,7 +3,7 @@ members = ["derive", "compatibility"]
 
 [package]
 name = "bincode-next"
-version = "3.0.0-rc.1"
+version = "3.0.0-rc.7"
 # Remember to update html_root_url and bincode_derive
 authors = [
     "Xinyu Yang <xinyu.yang@apich.org>",
@@ -12,19 +12,35 @@ authors = [
     "Victor Koenders <bincode@trangar.com>",
     "The bincode-next & bincode developers",
 ]
-exclude = ["logo.svg", "examples/*", ".gitignore", ".github/"]
-rust-version = "1.90.0"
+exclude = [
+    "complex_world_decode/*",
+    "complex_world_encode/*",
+    "vec_u64_fixint_native_decode/*",
+    "vec_u64_large_varint_decode/*",
+    "vec_u64_small_varint_decode/*",
+    "vec_u8_bulk_decode/*",
+    "report/*",
+    "index.html",
+    "fuzz/*",
+    "CNAME",
+    "Cargo.lock",
+    'Bench Results of bincode-next.md',
+    "examples/*",
+    ".gitignore",
+    ".github/",
+]
+rust-version = "1.91.0"
 
 publish = true
 
 repository = "https://github.com/Apich-Organization/bincode"
 documentation = "https://docs.rs/bincode_next"
 readme = "./README.md"
-categories = ["encoding", "network-programming"]
-keywords = ["binary", "encode", "decode", "serialize", "deserialize"]
+categories = ["encoding", "data-structures", "no-std"]
+keywords = ["binary", "serialization", "serde", "encoding", "performance"]
 
 license = "MIT or Apache-2.0"
-description = "A binary serialization / deserialization strategy for transforming structs into bytes and vice versa!"
+description = "A compact, ultra-fast binary serialization format for Rust, optimized for networking and storage!"
 
 edition = "2024"
 
@@ -35,22 +51,34 @@ alloc = ["serde?/alloc"]
 derive = ["bincode_derive-next"]
 zero-copy = ["bincode_derive-next?/zero-copy"]
 static-size = ["bincode_derive-next?/static-size"]
+async-fiber = ["dep:futures-io", "dep:libc", "std"]
 # Remember to run 'MIRIFLAGS="-Zmiri-disable-isolation" cargo +nightly miri test --all-features --no-fail-fast'
+# And remeber 'sudo chrt -f 99 cargo +nightly bench --bench complex' also.
+# And for loom: 'RUSTFLAGS="--cfg loom" cargo test --test async_fiber_loom --features "async-fiber, tokio/full" --release'
 
 [dependencies]
-bincode_derive-next = { path = "derive", version = "3.0.0-rc.1", optional = true }
+bincode_derive-next = { path = "derive", version = "3.0.0-rc.7", optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
-unty = { version = "0.1.0", package = "unty-next" }
+unty = { version = "0.1.1", package = "unty-next" }
 rapidhash = { version = "4.4", default-features = false }
 pastey = "0.2"
+futures-io = { version = "0.3", optional = true }
+libc = { version = "0.2", optional = true }
 
 # Used for tests
 [dev-dependencies]
-ouroboros = "0.18.3"
+ouroboros = "0.18"
 serde_derive = "1.0"
 serde_json = { version = "1.0", default-features = false }
 tempfile = "3.2"
-criterion = "0.8"
+criterion = { version = "0.8", features = ["async_tokio"] }
+tokio = { version = "1.50", features = [
+    "rt",
+    "macros",
+    "rt-multi-thread",
+    "io-util",
+    "fs",
+] }
 rand = "0.10"
 uuid = { version = "1.1", features = ["serde"] }
 chrono = { version = "0.4", features = ["serde"] }
@@ -60,11 +88,18 @@ bincode_v2 = { version = "2.0.0-rc.3", package = "bincode", features = [
     "serde",
 ] }
 serde = { version = "1.0", features = ["derive"] }
-bumpalo = { version = "3.16.0", features = ["collections"] }
-proptest = "1.10.0"
+bumpalo = { version = "3.16", features = ["collections"] }
+proptest = "1.10"
+loom = "0.7"
+async-bincode = "0.8"
+futures = "0.3"
 
 [[bench]]
 name = "varint"
+harness = false
+
+[[bench]]
+name = "concurrency"
 harness = false
 
 [[bench]]
@@ -88,10 +123,20 @@ name = "relative_ptr_bench"
 harness = false
 required-features = ["zero-copy"]
 
+[[bench]]
+name = "async_fiber"
+harness = false
+required-features = ["async-fiber"]
+
 [profile.bench]
 codegen-units = 1
 debug = 1
 lto = true
+opt-level = 3
+strip = true
+debug-assertions = false
+overflow-checks = false
+incremental = true
 
 [profile.release]
 lto = true
@@ -99,6 +144,10 @@ codegen-units = 1
 panic = "abort"
 opt-level = 3
 strip = true
+debug = false
+debug-assertions = false
+overflow-checks = false
+incremental = true
 
 [profile.dev]
 lto = false
@@ -114,3 +163,6 @@ crate-type = ["cdylib", "rlib", "staticlib"]
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(loom)'] }

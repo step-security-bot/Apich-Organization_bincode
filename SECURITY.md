@@ -2,9 +2,11 @@
 
 ## Supported Versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 2.x.x   | :all:              |
+| Branch | Support Status |
+| :--- | :--- |
+| 3.x.x | Active Support |
+| 2.1.x | Security Updates Only |
+| < 2.1.0 | End of Life (Unsupported) |
 
 ## Reporting a Vulnerability
 
@@ -77,6 +79,13 @@ net.ipv4.tcp_syncookies = 1
 # Increase the maximum number of connections waiting for acceptance
 net.core.somaxconn = 4096
 net.core.netdev_max_backlog = 5000
+
+# Others 
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv4.conf.default.log_martians = 1
 
 # --- B. Filesystem / Permission Hardening ---
 

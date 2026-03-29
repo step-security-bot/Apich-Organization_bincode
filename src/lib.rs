@@ -148,7 +148,9 @@ use enc::write::Writer;
     feature = "alloc",
     feature = "std",
     feature = "derive",
-    feature = "serde"
+    feature = "serde",
+    feature = "zero-copy",
+    feature = "static-size"
 ))]
 pub use features::*;
 
@@ -161,18 +163,11 @@ pub use rapidhash;
 pub mod config;
 /// Fingerprinting support for schema verification.
 pub mod fingerprint;
-/// Relative pointer system for zero-copy nested structures
-#[cfg(feature = "zero-copy")]
-pub mod relative_ptr;
+
 #[macro_use]
 pub mod de;
 pub mod enc;
 pub mod error;
-
-#[cfg(feature = "static-size")]
-pub mod bounded;
-#[cfg(feature = "static-size")]
-pub mod static_size;
 
 #[cfg(feature = "static-size")]
 pub use static_size::StaticSize;
@@ -455,6 +450,66 @@ where
     C::Mode::decode_check(&config, &mut reader)?;
     let mut decoder = de::DecoderImpl::<_, C, ()>::new(reader, config, ());
     D::decode(&mut decoder)
+}
+
+/// Attempt to decode a given type `T` from the given async reader safely using a non-blocking fiber.
+///
+/// Requires the `async-fiber` feature.
+///
+/// # Errors
+///
+/// Returns a `DecodeError` if the reader fails or the data is invalid.
+///
+/// [config]: config/index.html
+#[cfg(feature = "async-fiber")]
+pub async fn decode_async<T, R, C>(
+    config: C,
+    reader: R,
+) -> Result<T, crate::error::DecodeError>
+where
+    T: crate::Decode<()>,
+    R: futures_io::AsyncRead + std::marker::Unpin,
+    C: crate::config::Config,
+    C::Mode: crate::config::InternalFingerprintGuard<T, C>,
+{
+    let bridge = crate::de::async_fiber::AsyncFiberBridge::new(reader);
+    bridge
+        .run(move |fiber_reader| {
+            // Because fingerprinting might yield, we do it in the fiber.
+            C::Mode::decode_check(&config, fiber_reader)?;
+            let mut decoder = crate::de::DecoderImpl::<_, C, ()>::new(fiber_reader, config, ());
+            T::decode(&mut decoder)
+        })
+        .await
+}
+
+/// Attempt to decode a given serde-compatible type `T` from the given async reader safely using a non-blocking fiber.
+///
+/// Requires the `async-fiber` feature.
+///
+/// # Errors
+///
+/// Returns a `DecodeError` if the reader fails or the data is invalid.
+///
+/// [config]: config/index.html
+#[cfg(all(feature = "async-fiber", feature = "serde"))]
+pub async fn decode_serde_async<'de, T, R, C>(
+    config: C,
+    reader: R,
+) -> Result<T, crate::error::DecodeError>
+where
+    T: ::serde::Deserialize<'de>,
+    R: futures_io::AsyncRead + std::marker::Unpin,
+    C: crate::config::Config,
+{
+    let bridge = crate::de::async_fiber::AsyncFiberBridge::new(reader);
+    bridge
+        .run(move |fiber_reader| {
+            let mut serde_decoder =
+                crate::features::serde::OwnedSerdeDecoder::from_reader(fiber_reader, config);
+            T::deserialize(serde_decoder.as_deserializer())
+        })
+        .await
 }
 
 // TODO: Currently our doctests fail when trying to include the specs because the specs depend on `derive` and `alloc`.
