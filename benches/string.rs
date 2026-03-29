@@ -1,8 +1,14 @@
 // https://github.com/bincode-org/bincode/issues/618
 
-use bincode::{Decode, Encode};
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use serde::{Deserialize, Serialize};
+extern crate bincode_next as bincode;
+use bincode::Decode;
+use bincode::Encode;
+use criterion::Criterion;
+use criterion::criterion_group;
+use criterion::criterion_main;
+use serde::Deserialize;
+use serde::Serialize;
+use std::hint::black_box;
 
 #[derive(Serialize, Deserialize, Default, Encode, Decode)]
 pub struct MyStruct {
@@ -13,7 +19,11 @@ pub struct MyStruct {
 
 impl MyStruct {
     #[inline]
-    pub fn new(v: Vec<String>, string: String, number: usize) -> Self {
+    pub fn new(
+        v: Vec<String>,
+        string: String,
+        number: usize,
+    ) -> Self {
         Self { v, string, number }
     }
 }

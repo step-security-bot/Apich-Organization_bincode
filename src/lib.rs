@@ -19,8 +19,10 @@
 //! |std   | Yes    | No          |`HashMap` and `HashSet`|`decode_from_std_read` and `encode_into_std_write`|
 //! |alloc | Yes    | No          |All common containers in alloc, like `Vec`, `String`, `Box`|`encode_to_vec`|
 //! |atomic| Yes    | No          |All `Atomic*` integer types, e.g. `AtomicUsize`, and `AtomicBool`||
-//! |derive| Yes    | No          |||Enables the `BorrowDecode`, `Decode` and `Encode` derive macros|
-//! |serde | No     | Yes (MSRV reliant on serde)|`Compat` and `BorrowCompat`, which will work for all types that implement serde's traits|serde-specific encode/decode functions in the [serde] module|Note: There are several [known issues](serde/index.html#known-issues) when using serde and bincode|
+//! |derive| Yes    | No          |||Enables the `BorrowDecode`, `Decode`, `Encode`, `Fingerprint` and `BitPacked` derive macros|
+//! |serde | No     | Yes (MSRV reliant on serde)|`Compat` and `BorrowCompat`, which will work for all types that implement serde's traits|serde-specific encode/decode functions in the [`serde`\] module|Note: There are several [known issues](serde/index.html#known-issues) when using serde and bincode|
+//! |zero-copy| No    | No          |`RelativePtr`, `ZeroArray`, `ZeroSlice`, `ZeroStr`, `ZeroString`|Enables the `relative_ptr` module and the `ZeroCopy` derive macro|Zero-copy nested structures using offsets|
+//! |static-size| No    | No          |||Enables the `static_size` module, the `bounded` module and the `StaticSize` derive macro|Compile-time size verification|
 //!
 //! # Which functions to use
 //!
@@ -28,12 +30,12 @@
 //!
 //! |Situation|Encode|Decode|
 //! |---|---|---
-//! |You're working with [`fs::File`] or [`net::TcpStream`]|[`encode_into_std_write`]|[`decode_from_std_read`]|
-//! |you're working with in-memory buffers|[`encode_to_vec`]|[`decode_from_slice`]|
-//! |You want to use a custom [Reader] and [Writer]|[`encode_into_writer`]|[`decode_from_reader`]|
-//! |You're working with pre-allocated buffers or on embedded targets|[`encode_into_slice`]|[`decode_from_slice`]|
+//! |You're working with [`fs::File`\] or [`net::TcpStream`\]|[`encode_into_std_write`\]|[`decode_from_std_read`\]|
+//! |you're working with in-memory buffers|[`encode_to_vec`\]|[`decode_from_slice`\]|
+//! |You want to use a custom [Reader] and [Writer]|[`encode_into_writer`\]|[`decode_from_reader`\]|
+//! |You're working with pre-allocated buffers or on embedded targets|[`encode_into_slice`\]|[`decode_from_slice`\]|
 //!
-//! **Note:** If you're using `serde`, use `bincode::serde::...` instead of `bincode::...`
+//! **Note:** If you're using `serde`, use `bincode_next::serde::...` instead of `bincode_next::...`
 //!
 //! # Example
 //!
@@ -50,10 +52,10 @@
 //!     [0u8, 1u8, 2u8, 3u8]
 //! );
 //!
-//! let length = bincode::encode_into_slice(
+//! let length = bincode_next::encode_into_slice(
 //!     input,
 //!     &mut slice,
-//!     bincode::config::standard()
+//!     bincode_next::config::standard()
 //! ).unwrap();
 //!
 //! let slice = &slice[..length];
@@ -61,14 +63,13 @@
 //!
 //! // Decoding works the same as encoding.
 //! // The trait used is `Decode`, and can also be automatically implemented with the `derive` feature.
-//! let decoded: (u8, u32, i128, char, [u8; 4]) = bincode::decode_from_slice(slice, bincode::config::standard()).unwrap().0;
+//! let decoded: (u8, u32, i128, char, [u8; 4]) = bincode_next::decode_from_slice(slice, bincode_next::config::standard()).unwrap().0;
 //!
 //! assert_eq!(decoded, input);
 //! ```
 //!
-//! [`fs::File`]: std::fs::File
-//! [`net::TcpStream`]: std::net::TcpStream
-//!
+//! [`fs::File`\]: `std::fs::File`
+//! [`net::TcpStream`\]: `std::net::TcpStream`
 
 // =========================================================================
 // RUST LINT CONFIGURATION: bincode-next
@@ -97,7 +98,6 @@
     clippy::implicit_clone,
     clippy::all,
     clippy::pedantic,
-    warnings,
     missing_docs,
     clippy::nursery,
     clippy::single_call_fn,
@@ -106,9 +106,13 @@
 // LEVEL 2: STYLE WARNINGS (Warn)
 // -------------------------------------------------------------------------
 #![warn(
+    warnings,
     unsafe_code,
     clippy::dbg_macro,
     clippy::todo,
+    clippy::cast_possible_truncation,
+    clippy::cast_sign_loss,
+    clippy::cast_possible_wrap,
     clippy::unnecessary_safety_comment
 )]
 // -------------------------------------------------------------------------
@@ -116,6 +120,7 @@
 // -------------------------------------------------------------------------
 #![allow(
     clippy::restriction,
+    clippy::inline_always,
     unused_doc_comments,
     clippy::empty_line_after_doc_comments
 )]
@@ -128,58 +133,99 @@ extern crate alloc;
 extern crate std;
 
 mod atomic;
+#[doc(hidden)]
+pub mod error_path;
 mod features;
-pub(crate) mod utils;
+#[doc(hidden)]
+pub mod utils;
 pub(crate) mod varint;
 
-use de::{read::Reader, Decoder};
+use de::Decoder;
+use de::read::Reader;
 use enc::write::Writer;
 
 #[cfg(any(
     feature = "alloc",
     feature = "std",
     feature = "derive",
-    feature = "serde"
+    feature = "serde",
+    feature = "zero-copy",
+    feature = "static-size"
 ))]
 pub use features::*;
 
+/// The major version of the bincode library.
+pub const BINCODE_MAJOR_VERSION: u64 = 3;
+
+#[doc(hidden)]
+pub use rapidhash;
+
 pub mod config;
+/// Fingerprinting support for schema verification.
+pub mod fingerprint;
+
 #[macro_use]
 pub mod de;
 pub mod enc;
 pub mod error;
 
-pub use de::{BorrowDecode, Decode};
+#[cfg(feature = "static-size")]
+pub use static_size::StaticSize;
+
+pub use de::BorrowDecode;
+pub use de::Decode;
 pub use enc::Encode;
+pub use fingerprint::Fingerprint;
+#[cfg(feature = "zero-copy")]
+pub use relative_ptr::ZeroCopy;
+#[cfg(feature = "zero-copy")]
+pub use relative_ptr::ZeroCopyType;
 
 use config::Config;
+use config::internal::InternalFingerprintGuard;
 
 /// Encode the given value into the given slice. Returns the amount of bytes that have been written.
 ///
 /// See the [config] module for more information on configurations.
+///
+/// # Errors
+///
+/// Returns an `EncodeError` if the slice is too small or the value cannot be encoded.
 ///
 /// [config]: config/index.html
 pub fn encode_into_slice<E: enc::Encode, C: Config>(
     val: E,
     dst: &mut [u8],
     config: C,
-) -> Result<usize, error::EncodeError> {
-    let writer = enc::write::SliceWriter::new(dst);
+) -> Result<usize, error::EncodeError>
+where
+    C::Mode: config::InternalFingerprintGuard<E, C>,
+{
+    let mut writer = enc::write::SliceWriter::new(dst);
+    C::Mode::encode_check(&config, &mut writer)?;
     let mut encoder = enc::EncoderImpl::<_, C>::new(writer, config);
     val.encode(&mut encoder)?;
     Ok(encoder.into_writer().bytes_written())
 }
 
-/// Encode the given value into a custom [Writer].
+/// Encode the given value into a custom [`Writer`\].
 ///
 /// See the [config] module for more information on configurations.
+///
+/// # Errors
+///
+/// Returns an `EncodeError` if the writer fails or the value cannot be encoded.
 ///
 /// [config]: config/index.html
 pub fn encode_into_writer<E: enc::Encode, W: Writer, C: Config>(
     val: E,
-    writer: W,
+    mut writer: W,
     config: C,
-) -> Result<(), error::EncodeError> {
+) -> Result<(), error::EncodeError>
+where
+    C::Mode: config::InternalFingerprintGuard<E, C>,
+{
+    C::Mode::encode_check(&config, &mut writer)?;
     let mut encoder = enc::EncoderImpl::<_, C>::new(writer, config);
     val.encode(&mut encoder)?;
     Ok(())
@@ -187,31 +233,46 @@ pub fn encode_into_writer<E: enc::Encode, W: Writer, C: Config>(
 
 /// Attempt to decode a given type `D` from the given slice. Returns the decoded output and the amount of bytes read.
 ///
-/// Note that this does not work with borrowed types like `&str` or `&[u8]`. For that use [borrow_decode_from_slice].
+/// Note that this does not work with borrowed types like `&str` or `&[u8]`. For that use [`borrow_decode_from_slice`\].
 ///
 /// See the [config] module for more information on configurations.
+///
+/// # Errors
+///
+/// Returns a `DecodeError` if the slice is too small or the data is invalid.
 ///
 /// [config]: config/index.html
 pub fn decode_from_slice<D: de::Decode<()>, C: Config>(
     src: &[u8],
     config: C,
-) -> Result<(D, usize), error::DecodeError> {
+) -> Result<(D, usize), error::DecodeError>
+where
+    C::Mode: config::InternalFingerprintGuard<D, C>,
+{
     decode_from_slice_with_context(src, config, ())
 }
 
 /// Attempt to decode a given type `D` from the given slice with `Context`. Returns the decoded output and the amount of bytes read.
 ///
-/// Note that this does not work with borrowed types like `&str` or `&[u8]`. For that use [borrow_decode_from_slice].
+/// Note that this does not work with borrowed types like `&str` or `&[u8]`. For that use [`borrow_decode_from_slice`\].
 ///
 /// See the [config] module for more information on configurations.
+///
+/// # Errors
+///
+/// Returns a `DecodeError` if the slice is too small or the data is invalid.
 ///
 /// [config]: config/index.html
 pub fn decode_from_slice_with_context<Context, D: de::Decode<Context>, C: Config>(
     src: &[u8],
     config: C,
     context: Context,
-) -> Result<(D, usize), error::DecodeError> {
-    let reader = de::read::SliceReader::new(src);
+) -> Result<(D, usize), error::DecodeError>
+where
+    C::Mode: config::InternalFingerprintGuard<D, C>,
+{
+    let mut reader = de::read::SliceReader::new(src);
+    C::Mode::decode_check(&config, &mut reader)?;
     let mut decoder = de::DecoderImpl::<_, C, Context>::new(reader, config, context);
     let result = D::decode(&mut decoder)?;
     let bytes_read = src.len() - decoder.reader().slice.len();
@@ -222,17 +283,28 @@ pub fn decode_from_slice_with_context<Context, D: de::Decode<Context>, C: Config
 ///
 /// See the [config] module for more information on configurations.
 ///
+/// # Errors
+///
+/// Returns a `DecodeError` if the slice is too small or the data is invalid.
+///
 /// [config]: config/index.html
 pub fn borrow_decode_from_slice<'a, D: de::BorrowDecode<'a, ()>, C: Config>(
     src: &'a [u8],
     config: C,
-) -> Result<(D, usize), error::DecodeError> {
+) -> Result<(D, usize), error::DecodeError>
+where
+    C::Mode: config::InternalFingerprintGuard<D, C>,
+{
     borrow_decode_from_slice_with_context(src, config, ())
 }
 
 /// Attempt to decode a given type `D` from the given slice with `Context`. Returns the decoded output and the amount of bytes read.
 ///
 /// See the [config] module for more information on configurations.
+///
+/// # Errors
+///
+/// Returns a `DecodeError` if the slice is too small or the data is invalid.
 ///
 /// [config]: config/index.html
 pub fn borrow_decode_from_slice_with_context<
@@ -244,25 +316,200 @@ pub fn borrow_decode_from_slice_with_context<
     src: &'a [u8],
     config: C,
     context: Context,
-) -> Result<(D, usize), error::DecodeError> {
-    let reader = de::read::SliceReader::new(src);
+) -> Result<(D, usize), error::DecodeError>
+where
+    C::Mode: config::InternalFingerprintGuard<D, C>,
+{
+    let mut reader = de::read::SliceReader::new(src);
+    C::Mode::decode_check(&config, &mut reader)?;
     let mut decoder = de::DecoderImpl::<_, C, Context>::new(reader, config, context);
     let result = D::borrow_decode(&mut decoder)?;
     let bytes_read = src.len() - decoder.reader().slice.len();
     Ok((result, bytes_read))
 }
 
-/// Attempt to decode a given type `D` from the given [Reader].
+/// Attempt to decode a given type `D` from the given slice with a compile-time bound check.
+///
+/// This function ensures that the target type `D` cannot exceed the provided buffer capacity `CAP` at compile-time.
+///
+/// # Errors
+///
+/// Returns a `DecodeError` if the slice contains invalid data.
+#[cfg(feature = "static-size")]
+pub fn decode_from_slice_static<D, const CAP: usize, C>(
+    src: &[u8; CAP],
+    config: C,
+) -> Result<D, error::DecodeError>
+where
+    D: de::Decode<()> + static_size::StaticSize,
+    C: Config,
+    C::Mode: config::InternalFingerprintGuard<D, C>,
+{
+    const {
+        assert!(D::MAX_SIZE <= CAP, "Buffer too small for target type");
+    }
+    let (val, _) = decode_from_slice(src, config)?;
+    Ok(val)
+}
+
+/// Attempt to decode a given type `D` from the given slice with a compile-time bound check and a
+/// decoding context.
+///
+/// This function ensures that the target type `D` cannot exceed the provided buffer capacity `CAP`
+/// at compile-time.
+///
+/// # Errors
+///
+/// Returns a `DecodeError` if the slice contains invalid data.
+#[cfg(feature = "static-size")]
+pub fn decode_from_slice_static_with_context<Context, D, const CAP: usize, C>(
+    src: &[u8; CAP],
+    config: C,
+    context: Context,
+) -> Result<D, error::DecodeError>
+where
+    D: de::Decode<Context> + static_size::StaticSize,
+    C: Config,
+    C::Mode: config::InternalFingerprintGuard<D, C>,
+{
+    const {
+        assert!(D::MAX_SIZE <= CAP, "Buffer too small for target type");
+    }
+    let (val, _) = decode_from_slice_with_context(src, config, context)?;
+    Ok(val)
+}
+
+/// Attempt to decode a given type `D` from the given slice with a compile-time bound check.
+///
+/// This function ensures that the target type `D` cannot exceed the provided buffer capacity `CAP`
+/// at compile-time.
+///
+/// # Errors
+///
+/// Returns a `DecodeError` if the slice contains invalid data.
+#[cfg(feature = "static-size")]
+pub fn borrow_decode_from_slice_static<'a, D, const CAP: usize, C>(
+    src: &'a [u8; CAP],
+    config: C,
+) -> Result<D, error::DecodeError>
+where
+    D: de::BorrowDecode<'a, ()> + static_size::StaticSize,
+    C: Config,
+    C::Mode: config::InternalFingerprintGuard<D, C>,
+{
+    const {
+        assert!(D::MAX_SIZE <= CAP, "Buffer too small for target type");
+    }
+    let (val, _) = borrow_decode_from_slice(src, config)?;
+    Ok(val)
+}
+
+/// Attempt to borrow-decode a given type `D` from the given slice with a compile-time bound check
+/// and a decoding context.
+///
+/// This function ensures that the target type `D` cannot exceed the provided buffer capacity `CAP`
+/// at compile-time.
+///
+/// # Errors
+///
+/// Returns a `DecodeError` if the slice contains invalid data.
+#[cfg(feature = "static-size")]
+pub fn borrow_decode_from_slice_static_with_context<'a, Context, D, const CAP: usize, C>(
+    src: &'a [u8; CAP],
+    config: C,
+    context: Context,
+) -> Result<D, error::DecodeError>
+where
+    D: de::BorrowDecode<'a, Context> + static_size::StaticSize,
+    C: Config,
+    C::Mode: config::InternalFingerprintGuard<D, C>,
+{
+    const {
+        assert!(D::MAX_SIZE <= CAP, "Buffer too small for target type");
+    }
+    let (val, _) = borrow_decode_from_slice_with_context(src, config, context)?;
+    Ok(val)
+}
+
+/// Attempt to decode a given type `D` from the given [`Reader`\].
 ///
 /// See the [config] module for more information on configurations.
 ///
+/// # Errors
+///
+/// Returns a `DecodeError` if the reader fails or the data is invalid.
+///
 /// [config]: config/index.html
 pub fn decode_from_reader<D: de::Decode<()>, R: Reader, C: Config>(
-    reader: R,
+    mut reader: R,
     config: C,
-) -> Result<D, error::DecodeError> {
+) -> Result<D, error::DecodeError>
+where
+    C::Mode: config::InternalFingerprintGuard<D, C>,
+{
+    C::Mode::decode_check(&config, &mut reader)?;
     let mut decoder = de::DecoderImpl::<_, C, ()>::new(reader, config, ());
     D::decode(&mut decoder)
+}
+
+/// Attempt to decode a given type `T` from the given async reader safely using a non-blocking fiber.
+///
+/// Requires the `async-fiber` feature.
+///
+/// # Errors
+///
+/// Returns a `DecodeError` if the reader fails or the data is invalid.
+///
+/// [config]: config/index.html
+#[cfg(feature = "async-fiber")]
+pub async fn decode_async<T, R, C>(
+    config: C,
+    reader: R,
+) -> Result<T, crate::error::DecodeError>
+where
+    T: crate::Decode<()>,
+    R: futures_io::AsyncRead + std::marker::Unpin,
+    C: crate::config::Config,
+    C::Mode: crate::config::InternalFingerprintGuard<T, C>,
+{
+    let bridge = crate::de::async_fiber::AsyncFiberBridge::new(reader);
+    bridge
+        .run(move |fiber_reader| {
+            // Because fingerprinting might yield, we do it in the fiber.
+            C::Mode::decode_check(&config, fiber_reader)?;
+            let mut decoder = crate::de::DecoderImpl::<_, C, ()>::new(fiber_reader, config, ());
+            T::decode(&mut decoder)
+        })
+        .await
+}
+
+/// Attempt to decode a given serde-compatible type `T` from the given async reader safely using a non-blocking fiber.
+///
+/// Requires the `async-fiber` feature.
+///
+/// # Errors
+///
+/// Returns a `DecodeError` if the reader fails or the data is invalid.
+///
+/// [config]: config/index.html
+#[cfg(all(feature = "async-fiber", feature = "serde"))]
+pub async fn decode_serde_async<'de, T, R, C>(
+    config: C,
+    reader: R,
+) -> Result<T, crate::error::DecodeError>
+where
+    T: ::serde::Deserialize<'de>,
+    R: futures_io::AsyncRead + std::marker::Unpin,
+    C: crate::config::Config,
+{
+    let bridge = crate::de::async_fiber::AsyncFiberBridge::new(reader);
+    bridge
+        .run(move |fiber_reader| {
+            let mut serde_decoder =
+                crate::features::serde::OwnedSerdeDecoder::from_reader(fiber_reader, config);
+            T::deserialize(serde_decoder.as_deserializer())
+        })
+        .await
 }
 
 // TODO: Currently our doctests fail when trying to include the specs because the specs depend on `derive` and `alloc`.
@@ -280,5 +527,5 @@ pub mod migration_guide {
 // Test the examples in readme.md
 #[cfg(all(feature = "alloc", feature = "derive", doctest))]
 mod readme {
-    #![doc = include_str!("../readme.md")]
+    #![doc = include_str!("../README.md")]
 }

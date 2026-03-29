@@ -1,76 +1,38 @@
-# Reasons for the forking (or we should say reseting)
+# Bincode-Next
 
-For the sad reasons that we all know about, bincode has leaved us because of those who has doxxing the original developers.
+<img align="right" src="./logo.svg" height="200" />
 
-Apich Orgnisation strongly opsite any type of doxxing and will not tolerate it. (We also suffered from these kind of events before but only for our personal interest reasons) But in any sense, we respect the original developers and their work.
-
-For the dependency issue of RSSN and the bigger Rust community, we have decided to fork the project and continue the development. The project will be renamed to `bincode-next` and will be hosted on GitHub and Codeberg.
-
-# Special disclaimer
-
-1. We fully respect the any copyright notice from the original developers.
-2. We will not tolerate any form of doxxing or harassment.
-3. We will not tolerate any form of discrimination or hate speech.
-4. We will not tolerate any form of plagiarism or copyright infringement.
-5. As one of the mission of Apich, we will continue to test the edges of the current AI system assisted coding and development. Discussions on that is welcomed but only without hate.
-
-# Original develop teams' last messages
-
-Due to a doxxing incident bincode development has officially ceased and will not resume. Version 1.3.3 is considered a complete version of bincode that is not in need of any updates. Updates will only be pushed to the in the unlikely event of CVEs. Do not contact us for any other reason.
-
-To those of you who bothered doxxing us. Go touch grass and maybe for once consider your actions have consequences for real people.
-
-Fuck off and worst regards,
-The Bincode Team
-
-# Original readme continues below
-
-# Bincode
-
-<img align="right" src="./logo.svg" />
-
-[![CI](https://github.com/bincode-org/bincode/workflows/CI/badge.svg)](https://github.com/bincode-org/bincode/actions)
-[![](https://img.shields.io/crates/v/bincode.svg)](https://crates.io/crates/bincode)
-[![](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-<!-- [![](https://img.shields.io/badge/bincode-rustc_1.41.1+-lightgray.svg)](https://blog.rust-lang.org/2020/02/27/Rust-1.41.1.html) -->
-[![Matrix](https://img.shields.io/matrix/bincode:matrix.org?label=Matrix%20Chat)](https://matrix.to/#/#bincode:matrix.org)
+[![Discord Server](https://img.shields.io/discord/1459399539403522074.svg?label=Discord&logo=discord&color=blue)](https://discord.gg/D5e2czMTT9)
+[![License](https://img.shields.io/crates/l/bincode-next)](https://opensource.org/licenses/MIT)
 [![Scc Count Badge Code](https://sloc.xyz/github/Apich-Organization/bincode/?category=code)](https://github.com/Apich-Organization/bincode/)
-[![Scc Count Badge Blanks](https://sloc.xyz/github/Apich-Organization/bincode/?category=blanks)](https://github.com/Apich-Organization/bincode/)
-[![Scc Count Badge Lines](https://sloc.xyz/github/Apich-Organization/bincode/?category=lines)](https://github.com/Apich-Organization/bincode/)
-[![Scc Count Badge Comments](https://sloc.xyz/github/Apich-Organization/bincode/?category=comments)](https://github.com/Apich-Organization/bincode/)
-[![Scc Count Badge Cocomo](https://sloc.xyz/github/Apich-Organization/bincode/?category=cocomo)](https://github.com/Apich-Organization/bincode/)
-[![Scc Count Badge Effort](https://sloc.xyz/github/Apich-Organization/bincode/?category=effort)](https://github.com/Apich-Organization/bincode/)
+[![DOI](https://zenodo.org/badge/DOI/10.6084/m9.figshare.31410402.svg)](https://doi.org/10.6084/m9.figshare.31410402)
 
-A compact encoder / decoder pair that uses a binary zero-fluff encoding scheme.
-The size of the encoded object will be the same or smaller than the size that
-the object takes up in memory in a running Rust program.
+**Bincode-Next** is a high-performance binary encoder/decoder pair that uses a zero-fluff encoding scheme. It is a modernized fork of the original `bincode` library, maintained by the Apich Organization to ensure continued development and extreme performance optimizations for the Rust ecosystem.
 
-In addition to exposing two simple functions
-(one that encodes to `Vec<u8>`, and one that decodes from `&[u8]`),
-binary-encode exposes a Reader/Writer API that makes it work
-perfectly with other stream-based APIs such as Rust files, network streams,
-and the [flate2-rs](https://github.com/rust-lang/flate2-rs) compression
-library.
+The size of the encoded object will be the same or smaller than the size that the object takes up in memory in a running Rust program.
 
-## Usage Manifesto
+## Key Features
 
-The bincode developers do not endorse or support: the gas and oil industry, gambling, the military industrial complex, or any usage of AI. This means we will not accept any contributions coming from or related to these fields. This includes both PRs and filed issues. If you fall in one of these categories; do better.
+- **Performance**: Leverages SIMD (SSE2 on x86_64, NEON on AArch64) for rapid varint scanning and bulk primitive copying for massive throughput.
+- **Zero-Copy**: Nested Zero-copy support via Relative Pointers and Const Alignment. (optional feature, using the `zerocopy` feature to enable)
+- **Bit-Packing**: Bit-level Packing for Space-Optimized Serialization. (optional, using the `BitPacked` derive macro with the `config::standard().with_bit_packing()` config to enable)
+- **Schema Fingerprinting**: Schema Fingerprinting for Safe Versioning. (optional, using the `config::standard().with_fingerprint()` with the derive macro `Fingerprint` to enable)
+- **Compile-time Memory Bound Validation**: Compile-time Memory Bound Validation via Const Generics. (optional feature, enable the `static-size` feature to use it)
+- **Stream Support**: Works seamlessly with `std::io` (Reader/Writer) and `no_std` environments.
 
-Additionally, if any contribution you make makes use of generative AI, be it in code or PR/issue descriptions, you will be immediately banned from this organization.
+## Getting Started
 
-## [API Documentation](https://docs.rs/bincode/)
+Add `bincode-next` to your `Cargo.toml`:
 
-## Bincode in the Wild
+```toml
+[dependencies]
+bincode-next = "3.0.0-rc.5"
+```
 
-* [google/tarpc](https://github.com/google/tarpc): Bincode is used to serialize and deserialize networked RPC messages.
-* [servo/webrender](https://github.com/servo/webrender): Bincode records WebRender API calls for record/replay-style graphics debugging.
-* [servo/ipc-channel](https://github.com/servo/ipc-channel): IPC-Channel uses Bincode to send structs between processes using a channel-like API.
-* [ajeetdsouza/zoxide](https://github.com/ajeetdsouza/zoxide): zoxide uses Bincode to store a database of directories and their access frequencies on disk.
-
-## Example
+### Basic Example
 
 ```rust
-use bincode::{config, Decode, Encode};
+use bincode_next::{config, Decode, Encode};
 
 #[derive(Encode, Decode, PartialEq, Debug)]
 struct Entity {
@@ -86,65 +48,197 @@ fn main() {
 
     let world = World(vec![Entity { x: 0.0, y: 4.0 }, Entity { x: 10.0, y: 20.5 }]);
 
-    let encoded: Vec<u8> = bincode::encode_to_vec(&world, config).unwrap();
+    // Encode to a Vec<u8>
+    let encoded: Vec<u8> = bincode_next::encode_to_vec(&world, config).unwrap();
 
-    // The length of the vector is encoded as a varint u64, which in this case gets collapsed to a single byte
-    // See the documentation on varint for more info for that.
-    // The 4 floats are encoded in 4 bytes each.
-    assert_eq!(encoded.len(), 1 + 4 * 4);
-
-    let (decoded, len): (World, usize) = bincode::decode_from_slice(&encoded[..], config).unwrap();
+    // Decode from a slice
+    let (decoded, len): (World, usize) = bincode_next::decode_from_slice(&encoded[..], config).unwrap();
 
     assert_eq!(world, decoded);
-    assert_eq!(len, encoded.len()); // read all bytes
+    assert_eq!(len, encoded.len());
 }
 ```
 
+### Bit-Packing Example
+
+Enable bit-packing in your configuration to use bit-level field sizing:
+
+```rust
+use bincode_next::{config, BitPacked};
+
+#[derive(BitPacked, PartialEq, Debug)]
+struct Packed {
+    #[bincode(bits = 3)]
+    a: u8,
+    #[bincode(bits = 5)]
+    b: u8,
+}
+
+fn main() {
+    let config = config::standard().with_bit_packing();
+    let val = Packed { a: 7, b: 31 };
+    
+    let encoded = bincode_next::encode_to_vec(&val, config).unwrap();
+    // 'a' (3 bits) + 'b' (5 bits) = 8 bits (1 byte)
+    assert_eq!(encoded.len(), 1); 
+}
+```
+
+### High-Performance Async Decoding
+
+Bincode-Next supports true zero-cost asynchronous decoding using **Unified Fiber-backed Async (UFA)**. By executing synchronous traits on a dedicated lightweight fiber stack, we avoid the overhead of state machine generation and achieve high performance over `tokio::io::AsyncRead`.
+
+```rust
+use bincode_next::{config, decode_async, encode_to_vec, Decode, Encode};
+
+#[derive(Encode, Decode, PartialEq, Debug)]
+struct Entity { x: f32, y: f32 }
+
+#[tokio::main]
+async fn main() {
+    let my_entity = Entity { x: 1.0, y: 2.0 };
+    let encoded = encode_to_vec(&my_entity, config::standard()).unwrap();
+    // You can use any type that implements `futures_io::AsyncRead`.
+    // For this example, we'll use a simple byte slice, which implements it.
+    let mut reader = &encoded[..];
+    
+    // Decodes asynchronously on a fiber without custom async traits!
+    let entity: Entity = decode_async(config::standard(), &mut reader).await.unwrap();
+    assert_eq!(my_entity, entity);
+}
+```
+
+## Performance Optimizations
+
+Bincode-Next includes advanced optimizations for extreme performance:
+- **SIMD Varint Scanning**: Accelerates decoding of collections (like `Vec<u64>`) by scanning for small values using SSE2 or NEON instructions.
+- **Bulk Native Copy**: Automatically detects when data can be copied directly from memory (e.g., slices of primitives with matching endianness) to avoid element-wise processing.
+- **Uninitialized Memory**: Utilizes `MaybeUninit` and `set_len` optimizations for `Vec` decoding to avoid redundant zero-initialization.
+
+```shell
+git clone https://github.com/Apich-Organization/bincode.git
+cd bincode
+# We need root permission and use nightly compiler to ensure the most accurate result
+sudo cargo +nightly bench --bench extreme_perf
+sudo cargo +nightly bench --bench complex
+```
+
+TL;DR:Please visit [https://bincode-next.apich.org/](https://bincode-next.apich.org/) for more detailed information.
+
+### **Performance Comparison: Decoding**
+
+*Baseline: **bincode-next (traits, varint)** at 16.878 µs*
+
+| Rank  | Implementation   | Interface | Int Encoding | Median Time   | Relative Speed |
+| ----- | ---------------- | --------- | ------------ | ------------- | -------------- |
+| **1** | **bincode-next** | traits    | varint       | **16.878 µs** | **1.00x**      |
+| 2     | **bincode-next** | traits    | fixed        | 21.872 µs     | 1.30x          |
+| 3     | **bincode-v2**   | serde     | fixed        | 21.973 µs     | 1.30x          |
+| 4     | **bincode-v1**   | serde     | N/A          | 22.074 µs     | 1.31x          |
+| 5     | **bincode-v2**   | serde     | varint       | 25.727 µs     | 1.52x          |
+
+---
+
+### **Performance Comparison: Encoding**
+
+*Baseline: **bincode-next (traits, fixed)** at 2.9350 µs*
+
+| Rank  | Implementation   | Interface | Int Encoding | Median Time   | Relative Speed |
+| ----- | ---------------- | --------- | ------------ | ------------- | -------------- |
+| **1** | **bincode-next** | traits    | fixed        | **2.9350 µs** | **1.00x**      |
+| 2     | **bincode-v1**   | serde     | N/A          | 3.0767 µs     | 1.05x          |
+| 3     | **bincode-v2**   | serde     | fixed        | 3.3295 µs     | 1.13x          |
+| 4     | **bincode-next** | traits    | varint       | 3.3467 µs     | 1.14x          |
+| 5     | **bincode-v2**   | serde     | varint       | 4.2489 µs     | 1.45x          |
+
+---
+
+### **Efficiency Score: Combined Round-Trip Performance**
+
+*Sum of Median Decode + Median Encode (Normalized to the fastest = 1.00x)*
+
+| Rank  | Implementation   | Interface  | Int Encoding | Total Time    | Efficiency Score |
+| ----- | ---------------- | ---------- | ------------ | ------------- | ---------------- |
+| **1** | **bincode-next** | **traits** | **varint**   | **20.225 µs** | **1.00x**        |
+| 2     | **bincode-next** | traits     | fixed        | 24.807 µs     | 1.23x            |
+| 3     | **bincode-v1**   | serde      | N/A          | 25.151 µs     | 1.24x            |
+| 4     | **bincode-v2**   | serde      | fixed        | 25.303 µs     | 1.25x            |
+| 5     | **bincode-v2**   | serde      | varint       | 29.976 µs     | 1.48x            |
+
+---
+
+### **Vector `u64` Decoding: Varint Performance**
+
+*Contrasting small vs. large integer varint decoding.*
+
+| Dataset          | Implementation             | Median Time   | Relative Speed |
+| ---------------- | -------------------------- | ------------- | -------------- |
+| **Small Varint** | **bincode-next (current)** | **2.8256 µs** | **1.00x**      |
+| Small Varint     | bincode-v2 (original)      | 12.450 µs     | 4.41x          |
+|                  |                            |               |                |
+| **Large Varint** | **bincode-next (current)** | **13.062 µs** | **1.00x**      |
+| Large Varint     | bincode-v2 (original)      | 17.635 µs     | 1.35x          |
+
+---
+
+### **Vector `u64` Decoding: Fixed Performance**
+
+*Baseline: **bincode-next (current)** at 1.8373 µs*
+
+| Rank  | Implementation             | Median Time   | Relative Speed |
+| ----- | -------------------------- | ------------- | -------------- |
+| **1** | **bincode-next (current)** | **1.8373 µs** | **1.00x**      |
+| 2     | bincode-v1                 | 7.5378 µs     | 4.10x          |
+| 3     | bincode-v2 (original)      | 10.129 µs     | 5.51x          |
+
+---
+
+### **Bulk `u8` Decoding: Throughput Performance**
+
+*Baseline: **bincode-next (current)** at 160.44 ns*
+
+| Rank  | Implementation             | Median Time   | Relative Speed |
+| ----- | -------------------------- | ------------- | -------------- |
+| **1** | **bincode-next (current)** | **160.44 ns** | **1.00x**      |
+| 2     | bincode-v2 (original)      | 273.86 ns     | 1.71x          |
+| 3     | bincode-v1                 | 6307.00 ns    | 39.31x         |
+
+## About Security and Code Quality
+
+For security issues, please visit [the Security Team Homepage](https://security.apich.org) for more details on reporting.
+
+All code tests passed `miri` and all main crate source code passed `clippy` without errors.
+
+```shell
+MIRIFLAGS="-Zmiri-disable-isolation" cargo +nightly miri test --all-features --no-fail-fast
+cargo clippy --all-features
+```
+
+We remain committed to code security and welcomed security reporting.
+
+And please notice that contributors shall follow the community guide lines of `bincode-next`.
+
 ## Specification
 
-Bincode's format is specified in [docs/spec.md](https://github.com/bincode-org/bincode/blob/trunk/docs/spec.md).
+The formal wire-format specification is available in [docs/spec.md](docs/spec.md).
 
 ## FAQ
 
-### Is Bincode suitable for storage?
+### Why Bincode-Next?
+Bincode-Next was created to continue the legacy of the original Bincode project while pushing the boundaries of what's possible with modern Rust performance techniques and AI-assisted development.
 
-The encoding format is stable, provided the same configuration is used.
-This should ensure that later versions can still read data produced by a previous versions of the library if no major version change
-has occurred.
+### Is it compatible with Bincode 1.x / 2.x?
+Yes, Bincode-Next is designed to be wire-compatible with Bincode 2.x when using the same configurations. It also supports legacy 1.x formats via configuration.
 
-Bincode 1 and 2 are completely compatible if the same configuration is used.
+## Contributing
 
-Bincode is invariant over byte-order, making an exchange between different
-architectures possible. It is also rather space efficient, as it stores no
-metadata like struct field names in the output format and writes long streams of
-binary data without needing any potentially size-increasing encoding.
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for more details.
 
-As a result, Bincode is suitable for storing data. Be aware that it does not
-implement any sort of data versioning scheme or file headers, as these
-features are outside the scope of this crate.
+## License
 
-### Is Bincode suitable for untrusted inputs?
+Bincode-Next is licensed under either of:
 
-Bincode attempts to protect against hostile data. There is a maximum size
-configuration available (`Configuration::with_limit`), but not enabled in the
-default configuration. Enabling it causes pre-allocation size to be limited to
-prevent against memory exhaustion attacks.
+- The MIT License (MIT)
+- The Apache License, Version 2.0
 
-Deserializing any incoming data will not cause undefined behavior or memory
-issues, assuming that the deserialization code for the struct is safe itself.
-
-Bincode can be used for untrusted inputs in the sense that it will not create a
-security issues in your application, provided the configuration is changed to enable a
-maximum size limit. Malicious inputs will fail upon deserialization.
-
-### What is Bincode's MSRV (minimum supported Rust version)?
-
-Bincode 2.0 has an MSRV of 1.85.0. Any changes to the MSRV are considered a breaking change for semver purposes, except when certain features are enabled. Features affecting MSRV are documented in the crate root.
-
-### Why does bincode not respect `#[repr(u8)]`?
-
-Bincode will encode enum variants as a `u32`. If you're worried about storage size, we can recommend enabling `Configuration::with_variable_int_encoding()`. This option is enabled by default with the `standard` configuration. In this case enum variants will almost always be encoded as a `u8`.
-
-Currently we have not found a compelling case to respect `#[repr(...)]`. You're most likely trying to interop with a format that is similar-but-not-quite-bincode. We only support our own protocol ([spec](https://github.com/bincode-org/bincode/blob/trunk/docs/spec.md)).
-
-If you really want to use bincode to encode/decode a different protocol, consider implementing `Encode` and `Decode` yourself. `bincode-derive` will output the generated implementation in `target/generated/bincode/<name>_Encode.rs` and `target/generated/bincode/<name>_Decode.rs` which should get you started.
+See [LICENSE.md](LICENSE.md) for details.

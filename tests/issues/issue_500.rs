@@ -1,4 +1,7 @@
 #![cfg(all(feature = "serde", feature = "derive", feature = "std"))]
+#![allow(dead_code)]
+
+extern crate bincode_next as bincode;
 
 extern crate std;
 

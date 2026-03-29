@@ -1,4 +1,7 @@
-use super::{BorrowDecode, BorrowDecoder, Decode, Decoder};
+use super::BorrowDecode;
+use super::BorrowDecoder;
+use super::Decode;
+use super::Decoder;
 use crate::error::DecodeError;
 
 macro_rules! impl_tuple {
@@ -11,6 +14,7 @@ macro_rules! impl_tuple {
             $extra : BorrowDecode<'de, Context>,
         )*
          {
+             #[inline(always)]
             fn borrow_decode<BD: BorrowDecoder<'de, Context = Context>>(decoder: &mut BD) -> Result<Self, DecodeError> {
                 Ok((
                     $first::borrow_decode(decoder)?,
@@ -26,6 +30,7 @@ macro_rules! impl_tuple {
             $extra : Decode<Context>,
         )*
         {
+            #[inline(always)]
             fn decode<DE: Decoder<Context = Context>>(decoder: &mut DE) -> Result<Self, DecodeError> {
                 Ok((
                     $first::decode(decoder)?,
