@@ -1,9 +1,16 @@
 use core::fmt::Debug;
 
-fn the_same_with_config<V, C, CMP>(element: &V, config: C, cmp: CMP)
-where
+extern crate bincode_next as bincode;
+
+fn the_same_with_config<'a, V: 'a, C, CMP>(
+    element: &'a V,
+    config: C,
+    cmp: CMP,
+) where
     V: TheSameTrait,
     C: bincode::config::Config,
+    C::Mode: bincode::config::internal::InternalFingerprintGuard<V, C>
+        + bincode::config::internal::InternalFingerprintGuard<&'a V, C>,
     CMP: Fn(&V, &V) -> bool,
 {
     let mut buffer = [0u8; 2048];
@@ -31,8 +38,11 @@ where
 }
 
 #[cfg(feature = "serde")]
-fn the_same_with_config_serde<V, C, CMP>(element: &V, config: C, cmp: CMP)
-where
+fn the_same_with_config_serde<V, C, CMP>(
+    element: &V,
+    config: C,
+    cmp: CMP,
+) where
     V: TheSameTrait,
     C: bincode::config::Config,
     CMP: Fn(&V, &V) -> bool,
@@ -62,8 +72,10 @@ where
     assert_eq!(len, decoded_len);
 }
 
-pub fn the_same_with_comparer<V, CMP>(element: V, cmp: CMP)
-where
+pub fn the_same_with_comparer<V, CMP>(
+    element: V,
+    cmp: CMP,
+) where
     V: TheSameTrait,
     CMP: Fn(&V, &V) -> bool,
 {

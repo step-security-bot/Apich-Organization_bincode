@@ -1,8 +1,12 @@
 #![cfg(all(feature = "serde", feature = "std"))]
+#![allow(dead_code)]
+
+extern crate bincode_next as bincode;
 
 use glam::vec3;
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+use serde::Serialize;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 struct Instance {

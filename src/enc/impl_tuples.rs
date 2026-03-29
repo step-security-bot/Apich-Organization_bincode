@@ -1,11 +1,16 @@
-use super::{Encode, Encoder};
+use super::Encode;
+use super::Encoder;
 use crate::error::EncodeError;
 
 impl<A> Encode for (A,)
 where
     A: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         Ok(())
     }
@@ -16,7 +21,11 @@ where
     A: Encode,
     B: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         Ok(())
@@ -29,7 +38,11 @@ where
     B: Encode,
     C: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         self.2.encode(encoder)?;
@@ -44,7 +57,11 @@ where
     C: Encode,
     D: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         self.2.encode(encoder)?;
@@ -61,7 +78,11 @@ where
     D: Encode,
     E: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         self.2.encode(encoder)?;
@@ -80,7 +101,11 @@ where
     E: Encode,
     F: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         self.2.encode(encoder)?;
@@ -101,7 +126,11 @@ where
     F: Encode,
     G: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         self.2.encode(encoder)?;
@@ -124,7 +153,11 @@ where
     G: Encode,
     H: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         self.2.encode(encoder)?;
@@ -149,7 +182,11 @@ where
     H: Encode,
     I: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         self.2.encode(encoder)?;
@@ -176,7 +213,11 @@ where
     I: Encode,
     J: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         self.2.encode(encoder)?;
@@ -205,7 +246,11 @@ where
     J: Encode,
     K: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         self.2.encode(encoder)?;
@@ -236,7 +281,11 @@ where
     K: Encode,
     L: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         self.2.encode(encoder)?;
@@ -269,7 +318,11 @@ where
     L: Encode,
     M: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         self.2.encode(encoder)?;
@@ -304,7 +357,11 @@ where
     M: Encode,
     N: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         self.2.encode(encoder)?;
@@ -342,7 +399,11 @@ where
     N: Encode,
     O: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         self.2.encode(encoder)?;
@@ -382,7 +443,11 @@ where
     O: Encode,
     P: Encode,
 {
-    fn encode<_E: Encoder>(&self, encoder: &mut _E) -> Result<(), EncodeError> {
+    #[inline(always)]
+    fn encode<_E: Encoder>(
+        &self,
+        encoder: &mut _E,
+    ) -> Result<(), EncodeError> {
         self.0.encode(encoder)?;
         self.1.encode(encoder)?;
         self.2.encode(encoder)?;

@@ -1,7 +1,9 @@
 #![cfg(all(feature = "std", feature = "derive"))]
+#![allow(dead_code)]
 
 extern crate std;
 
+extern crate bincode_next as bincode;
 use std::collections::BTreeMap;
 
 #[derive(bincode::Decode, bincode::Encode)]
